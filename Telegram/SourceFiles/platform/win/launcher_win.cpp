@@ -141,20 +141,11 @@ std::optional<QStringList> Launcher::readArgumentsHook(
 }
 
 bool Launcher::launchUpdater(UpdaterLaunch action) {
-	if (cExeName().isEmpty()) {
+	// This fork has no updater. Keep the virtual hook only for ordinary
+	// application relaunches used by settings/language changes.
+	if (action != UpdaterLaunch::JustRelaunch || cExeName().isEmpty()) {
 		return false;
 	}
-
-	const auto operation = (action == UpdaterLaunch::JustRelaunch)
-		? QString()
-		: (cWriteProtected()
-			? u"runas"_q
-			: QString());
-	const auto binaryPath = (action == UpdaterLaunch::JustRelaunch)
-		? (cExeDir() + cExeName())
-		: (cWriteProtected()
-			? (cWorkingDir() + u"tupdates/temp/Updater.exe"_q)
-			: (cExeDir() + u"Updater.exe"_q));
 
 	auto argumentsList = QStringList();
 	const auto pushArgument = [&](const QString &argument) {
@@ -177,39 +168,11 @@ bool Launcher::launchUpdater(UpdaterLaunch action) {
 		pushArgument(u"-key"_q);
 		pushArgument('"' + cDataFile() + '"');
 	}
-
-	if (action == UpdaterLaunch::JustRelaunch) {
-		pushArgument(u"-noupdate"_q);
-		if (cRestartingToSettings()) {
-			pushArgument(u"-tosettings"_q);
-		}
-	} else {
-		pushArgument(u"-update"_q);
-		auto created = FILETIME();
-		auto exited = FILETIME();
-		auto kernel = FILETIME();
-		auto user = FILETIME();
-		if (GetProcessTimes(GetCurrentProcess(), &created, &exited, &kernel, &user)) {
-			// WHY: Application and storage destruction precede this call, so
-			// the updater can terminate us if remaining process teardown hangs.
-			const auto creationTime = (quint64(created.dwHighDateTime) << 32)
-				| created.dwLowDateTime;
-			pushArgument(u"-finishprocess"_q);
-			pushArgument(QString::number(GetCurrentProcessId()));
-			pushArgument(QString::number(creationTime));
-		} else {
-			const auto error = GetLastError();
-			LOG(("Update Error: could not query process creation time: %1"
-				).arg(error));
-		}
-		pushArgument(u"-exename"_q);
-		pushArgument('"' + cExeName() + '"');
-		if (cWriteProtected()) {
-			pushArgument(u"-writeprotected"_q);
-			pushArgument('"' + cExeDir() + '"');
-		}
+	if (cRestartingToSettings()) {
+		pushArgument(u"-tosettings"_q);
 	}
-	return launch(operation, binaryPath, argumentsList);
+
+	return launch(QString(), cExeDir() + cExeName(), argumentsList);
 }
 
 bool Launcher::launch(

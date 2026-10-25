@@ -323,16 +323,6 @@ PRIVATE
     payments/ui/payments_panel_delegate.h
     payments/ui/payments_reaction_box.cpp
     payments/ui/payments_reaction_box.h
-
-    platform/linux/current_geo_location_linux.cpp
-    platform/linux/current_geo_location_linux.h
-    platform/linux/text_recognition_linux.h
-    platform/mac/file_bookmark_mac.h
-    platform/mac/file_bookmark_mac.mm
-    platform/mac/current_geo_location_mac.h
-    platform/mac/current_geo_location_mac.mm
-    platform/mac/text_recognition_mac.h
-    platform/mac/text_recognition_mac.mm
     platform/win/current_geo_location_win.cpp
     platform/win/current_geo_location_win.h
     platform/win/text_recognition_win.h

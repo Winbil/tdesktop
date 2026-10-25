@@ -8,6 +8,11 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #pragma once
 
 #include "mtproto/dedicated_file_loader.h"
+#include "base/weak_ptr.h"
+
+#include <rpl/never.h>
+
+#include <QtCore/QString>
 
 namespace Main {
 class Session;
@@ -15,46 +20,72 @@ class Session;
 
 namespace Core {
 
-bool UpdaterDisabled();
-void SetUpdaterDisabledAtStartup();
+// Windows-only personal fork: update delivery is intentionally not present.
+// These tiny inline no-ops preserve source compatibility with upstream UI code
+// while allowing the compiler to remove updater-only branches completely.
+[[nodiscard]] inline constexpr bool UpdaterDisabled() {
+    return true;
+}
+inline void SetUpdaterDisabledAtStartup() {
+}
 
-class Updater;
-
-class UpdateChecker {
+class UpdateChecker final {
 public:
-	enum class State {
-		None,
-		Download,
-		Ready,
-	};
-	using Progress = MTP::AbstractDedicatedLoader::Progress;
+    enum class State {
+        None,
+        Download,
+        Ready,
+    };
+    using Progress = MTP::AbstractDedicatedLoader::Progress;
 
-	UpdateChecker();
+    UpdateChecker() = default;
 
-	rpl::producer<> checking() const;
-	rpl::producer<> isLatest() const;
-	rpl::producer<Progress> progress() const;
-	rpl::producer<> failed() const;
-	rpl::producer<> ready() const;
+    [[nodiscard]] rpl::producer<> checking() const {
+        return rpl::never<>();
+    }
+    [[nodiscard]] rpl::producer<> isLatest() const {
+        return rpl::never<>();
+    }
+    [[nodiscard]] rpl::producer<Progress> progress() const {
+        return rpl::never<Progress>();
+    }
+    [[nodiscard]] rpl::producer<> failed() const {
+        return rpl::never<>();
+    }
+    [[nodiscard]] rpl::producer<> ready() const {
+        return rpl::never<>();
+    }
 
-	void start(bool forceWait = false);
-	void stop();
-	void test();
+    void start(bool = false) {
+    }
+    void stop() {
+    }
+    void test() {
+    }
+    void setMtproto(base::weak_ptr<Main::Session>) {
+    }
 
-	void setMtproto(base::weak_ptr<Main::Session> session);
-
-	State state() const;
-	int already() const;
-	int size() const;
-	bool percent() const;
-
-private:
-	const std::shared_ptr<Updater> _updater;
-
+    [[nodiscard]] State state() const {
+        return State::None;
+    }
+    [[nodiscard]] int already() const {
+        return 0;
+    }
+    [[nodiscard]] int size() const {
+        return 0;
+    }
+    [[nodiscard]] bool percent() const {
+        return false;
+    }
 };
 
-bool checkReadyUpdate();
-void UpdateApplication();
-QString countAlphaVersionSignature(uint64 version);
+[[nodiscard]] inline constexpr bool checkReadyUpdate() {
+    return false;
+}
+inline void UpdateApplication() {
+}
+[[nodiscard]] inline QString countAlphaVersionSignature(uint64) {
+    return QString();
+}
 
 } // namespace Core

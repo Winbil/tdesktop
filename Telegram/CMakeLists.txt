@@ -4,7 +4,11 @@
 # For license and copyright information please follow this link:
 # https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
-add_executable(Telegram WIN32 MACOSX_BUNDLE)
+if (NOT WIN32)
+    message(FATAL_ERROR "This personal fork supports Windows only.")
+endif()
+
+add_executable(Telegram WIN32)
 init_non_host_target(Telegram)
 
 add_subdirectory(lib_rpl)
@@ -40,8 +44,6 @@ include(cmake/td_scheme.cmake)
 include(cmake/td_tde2e.cmake)
 include(cmake/td_ui.cmake)
 include(cmake/td_webauthn.cmake)
-include(cmake/telegram_apple_swift_runtime.cmake)
-include(cmake/generate_appstream_changelog.cmake)
 
 if (DESKTOP_APP_TEST_APPS)
     include(cmake/tests.cmake)
@@ -53,19 +55,6 @@ if (WIN32)
         platform/win/windows_quiethours.idl
         platform/win/windows_toastactivator.idl
     )
-endif()
-
-include(cmake/generate_update_keys.cmake)
-generate_update_keys(Telegram ${res_loc}/update)
-
-if (DESKTOP_APP_TEST_APPS OR TDESKTOP_BUILD_UPDATE_TESTS)
-    include(cmake/test_update_verify.cmake)
-    if (NOT DESKTOP_APP_DISABLE_AUTOUPDATE)
-        include(cmake/test_update_unpack.cmake)
-        if (WIN32 AND NOT build_winstore)
-            include(cmake/test_updater_win.cmake)
-        endif()
-    endif()
 endif()
 
 set_target_properties(Telegram PROPERTIES AUTOMOC ON)
@@ -104,16 +93,11 @@ PRIVATE
     desktop-app::external_qt
     desktop-app::external_qr_code_generator
     desktop-app::external_crash_reports
-    desktop-app::external_auto_updates
     desktop-app::external_openssl
     desktop-app::external_openal
     desktop-app::external_wallet_engine
     desktop-app::external_xxhash
 )
-
-if (NOT DESKTOP_APP_DISABLE_SWIFT6)
-    telegram_add_apple_swift_runtime(Telegram)
-endif()
 
 target_precompile_headers(Telegram PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${src_loc}/stdafx.h>)
 nice_target_sources(Telegram ${src_loc}
@@ -614,14 +598,7 @@ PRIVATE
     core/ui_integration.cpp
     core/ui_integration.h
     core/update_channel.h
-    core/update_checker.cpp
     core/update_checker.h
-    core/update_keys.cpp
-    core/update_keys.h
-    core/update_unpack.cpp
-    core/update_unpack.h
-    core/update_verify.cpp
-    core/update_verify.h
     core/utils.cpp
     core/utils.h
     core/version.h
@@ -1764,75 +1741,6 @@ PRIVATE
     payments/payments_non_panel_process.h
     payments/payments_reaction_process.cpp
     payments/payments_reaction_process.h
-    platform/linux/file_utilities_linux.cpp
-    platform/linux/file_utilities_linux.h
-    platform/linux/launcher_linux.cpp
-    platform/linux/launcher_linux.h
-    platform/linux/integration_linux.cpp
-    platform/linux/integration_linux.h
-    platform/linux/main_window_linux.cpp
-    platform/linux/main_window_linux.h
-    platform/linux/notifications_manager_linux.cpp
-    platform/linux/notifications_manager_linux.h
-    platform/linux/overlay_widget_linux.h
-    platform/linux/specific_linux.cpp
-    platform/linux/specific_linux.h
-    platform/linux/translate_provider_linux.cpp
-    platform/linux/translate_provider_linux.h
-    platform/linux/tray_linux.cpp
-    platform/linux/tray_linux.h
-    platform/linux/update_install_linux.cpp
-    platform/linux/update_install_linux.h
-    platform/linux/webauthn_linux.cpp
-    platform/mac/file_utilities_mac.mm
-    platform/mac/file_utilities_mac.h
-    platform/mac/global_menu_mac.h
-    platform/mac/global_menu_mac.mm
-    platform/mac/launcher_mac.mm
-    platform/mac/launcher_mac.h
-    platform/mac/integration_mac.mm
-    platform/mac/integration_mac.h
-    platform/mac/mac_iconv_helper.c
-    platform/mac/main_window_mac.mm
-    platform/mac/main_window_mac.h
-    platform/mac/native_event_mac.h
-    platform/mac/native_event_mac.mm
-    platform/mac/notifications_manager_mac.mm
-    platform/mac/notifications_manager_mac.h
-    platform/mac/notifications_manager_mac_un.mm
-    platform/mac/notifications_manager_mac_un.h
-    platform/mac/overlay_widget_mac.h
-    platform/mac/overlay_widget_mac.mm
-    platform/mac/specific_mac.mm
-    platform/mac/specific_mac.h
-    platform/mac/specific_mac_p.mm
-    platform/mac/specific_mac_p.h
-    platform/mac/translate_provider_mac.h
-    platform/mac/translate_provider_mac.mm
-    platform/mac/tray_mac.h
-    platform/mac/tray_mac.mm
-    platform/mac/wallet_protection_mac.h
-    platform/mac/wallet_protection_mac.mm
-    platform/mac/webauthn_mac.mm
-    platform/mac/window_title_mac.mm
-    platform/mac/touchbar/items/mac_formatter_item.h
-    platform/mac/touchbar/items/mac_formatter_item.mm
-    platform/mac/touchbar/items/mac_pinned_chats_item.h
-    platform/mac/touchbar/items/mac_pinned_chats_item.mm
-    platform/mac/touchbar/items/mac_scrubber_item.h
-    platform/mac/touchbar/items/mac_scrubber_item.mm
-    platform/mac/touchbar/mac_touchbar_audio.h
-    platform/mac/touchbar/mac_touchbar_audio.mm
-    platform/mac/touchbar/mac_touchbar_common.h
-    platform/mac/touchbar/mac_touchbar_common.mm
-    platform/mac/touchbar/mac_touchbar_controls.h
-    platform/mac/touchbar/mac_touchbar_controls.mm
-    platform/mac/touchbar/mac_touchbar_main.h
-    platform/mac/touchbar/mac_touchbar_main.mm
-    platform/mac/touchbar/mac_touchbar_manager.h
-    platform/mac/touchbar/mac_touchbar_manager.mm
-    platform/mac/touchbar/mac_touchbar_media_view.h
-    platform/mac/touchbar/mac_touchbar_media_view.mm
     platform/win/file_utilities_win.cpp
     platform/win/file_utilities_win.h
     platform/win/launcher_win.cpp
@@ -2493,7 +2401,6 @@ endif()
 
 if (DESKTOP_APP_USE_PACKAGED)
     remove_target_sources(Telegram ${src_loc}
-        platform/mac/mac_iconv_helper.c
     )
 endif()
 
@@ -2667,9 +2574,6 @@ else()
 
     include(${cmake_helpers_loc}/external/glib/generate_dbus.cmake)
     generate_dbus(Telegram org.freedesktop.portal. XdpBackground ${third_party_loc}/xdg-desktop-portal/data/org.freedesktop.portal.Background.xml)
-    generate_dbus(Telegram org.freedesktop.portal. FlatpakPortal ${src_loc}/platform/linux/org.freedesktop.portal.Flatpak.xml)
-    generate_dbus(Telegram org.freedesktop. XdgNotifications ${src_loc}/platform/linux/org.freedesktop.Notifications.xml)
-    generate_dbus(Telegram org.freedesktop.login1. Logind ${src_loc}/platform/linux/org.freedesktop.login1.Manager.xml)
 endif()
 
 if (build_macstore)
@@ -2829,98 +2733,7 @@ endif()
 
 target_prepare_qrc(Telegram)
 
-if (NOT DESKTOP_APP_DISABLE_AUTOUPDATE AND NOT build_macstore AND NOT build_winstore)
-    add_executable(Updater WIN32)
-    init_non_host_target(Updater)
-
-    add_dependencies(Telegram Updater)
-
-    nice_target_sources(Updater ${src_loc}
-    PRIVATE
-        _other/updater_win.cpp
-        _other/updater_linux.cpp
-        _other/updater_osx.m
-        _other/updater.h
-    )
-
-    set_target_properties(Updater PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${output_folder}
-    )
-
-    if (WIN32)
-        get_filename_component(lib_base_loc lib_base REALPATH)
-        nice_target_sources(Updater ${lib_base_loc}
-        PRIVATE
-            base/platform/win/base_windows_safe_library.cpp
-            base/platform/win/base_windows_safe_library.h
-        )
-        target_include_directories(Updater PRIVATE ${lib_base_loc})
-        if (MSVC)
-            target_link_libraries(Updater
-            PRIVATE
-                delayimp
-            )
-            target_link_options(Updater
-            PRIVATE
-                /DELAYLOAD:user32.dll
-                /DELAYLOAD:advapi32.dll
-                /DELAYLOAD:shell32.dll
-                /DELAYLOAD:ole32.dll
-                /DELAYLOAD:shlwapi.dll
-            )
-        else()
-            target_link_options(Updater PRIVATE -municode)
-        endif()
-        if (DESKTOP_APP_WIN7_BASELINE)
-            target_link_options(Updater PRIVATE /SUBSYSTEM:WINDOWS,6.01)
-        endif()
-    elseif (APPLE)
-        # Keep the launch API available to macOS 10.13 release builds.
-        target_compile_options(Updater PRIVATE -Wno-error=deprecated-declarations)
-        add_custom_command(TARGET Updater
-        POST_BUILD
-            COMMAND mkdir -p $<TARGET_FILE_DIR:Telegram>/../Frameworks
-            COMMAND cp $<TARGET_FILE:Updater> $<TARGET_FILE_DIR:Telegram>/../Frameworks/
-        )
-    endif()
-
-    if (DESKTOP_APP_SPECIAL_TARGET)
-        add_executable(Packer)
-        init_target(Packer)
-
-        add_dependencies(Telegram Packer)
-
-        nice_target_sources(Packer ${src_loc}
-        PRIVATE
-            _other/packer.cpp
-            _other/packer.h
-            core/update_verify.cpp
-            core/update_verify.h
-        )
-
-        target_include_directories(Packer PRIVATE ${src_loc})
-
-        target_link_libraries(Packer
-        PRIVATE
-            desktop-app::external_qt
-            desktop-app::external_zlib
-            desktop-app::external_auto_updates
-            desktop-app::external_openssl
-        )
-
-        if (DESKTOP_APP_USE_PACKAGED)
-            target_compile_definitions(Packer PRIVATE PACKER_USE_PACKAGED)
-        endif()
-
-        if (WIN32 AND DESKTOP_APP_WIN7_BASELINE)
-            # WindowsApp.lib is off the link line, WinRT stubs come from lib_base.
-            target_link_libraries(Packer PRIVATE desktop-app::lib_base)
-            target_link_options(Packer PRIVATE /SUBSYSTEM:CONSOLE,6.01)
-        endif()
-
-        set_target_properties(Packer PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${output_folder})
-    endif()
-elseif (build_winstore)
+if (build_winstore)
     add_executable(StartupTask WIN32)
     init_non_host_target(StartupTask)
 
@@ -2934,32 +2747,4 @@ elseif (build_winstore)
     set_target_properties(StartupTask PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${output_folder}
     )
-endif()
-
-if (LINUX AND DESKTOP_APP_USE_PACKAGED)
-    include(GNUInstallDirs)
-    configure_file("../lib/xdg/org.telegram.desktop.service" "${CMAKE_CURRENT_BINARY_DIR}/org.telegram.desktop.service" @ONLY)
-    configure_file("../lib/xdg/org.telegram.desktop.metainfo.xml" "${CMAKE_CURRENT_BINARY_DIR}/org.telegram.desktop.metainfo.xml" @ONLY)
-    generate_appstream_changelog(Telegram "${CMAKE_SOURCE_DIR}/changelog.txt" "${CMAKE_CURRENT_BINARY_DIR}/org.telegram.desktop.metainfo.xml")
-    install(TARGETS Telegram RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" BUNDLE DESTINATION "${CMAKE_INSTALL_BINDIR}")
-    install(FILES "Resources/art/icon16.png" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/16x16/apps" RENAME "org.telegram.desktop.png")
-    install(FILES "Resources/art/icon16@2x.png" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/16x16@2/apps" RENAME "org.telegram.desktop.png")
-    install(FILES "Resources/art/icon32.png" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/32x32/apps" RENAME "org.telegram.desktop.png")
-    install(FILES "Resources/art/icon32@2x.png" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/32x32@2/apps" RENAME "org.telegram.desktop.png")
-    install(FILES "Resources/art/icon48.png" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/48x48/apps" RENAME "org.telegram.desktop.png")
-    install(FILES "Resources/art/icon48@2x.png" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/48x48@2/apps" RENAME "org.telegram.desktop.png")
-    install(FILES "Resources/art/icon64.png" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/64x64/apps" RENAME "org.telegram.desktop.png")
-    install(FILES "Resources/art/icon64@2x.png" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/64x64@2/apps" RENAME "org.telegram.desktop.png")
-    install(FILES "Resources/art/icon128.png" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/128x128/apps" RENAME "org.telegram.desktop.png")
-    install(FILES "Resources/art/icon128@2x.png" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/128x128@2/apps" RENAME "org.telegram.desktop.png")
-    install(FILES "Resources/art/icon256.png" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/256x256/apps" RENAME "org.telegram.desktop.png")
-    install(FILES "Resources/art/icon256@2x.png" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/256x256@2/apps" RENAME "org.telegram.desktop.png")
-    install(FILES "Resources/art/icon512.png" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/512x512/apps" RENAME "org.telegram.desktop.png")
-    install(FILES "Resources/art/icon512@2x.png" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/512x512@2/apps" RENAME "org.telegram.desktop.png")
-    install(FILES "Resources/icons/tray_monochrome.svg" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/symbolic/apps" RENAME "org.telegram.desktop-symbolic.svg")
-    install(FILES "Resources/icons/tray_monochrome_attention.svg" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/symbolic/apps" RENAME "org.telegram.desktop-attention-symbolic.svg")
-    install(FILES "Resources/icons/tray_monochrome_mute.svg" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/symbolic/apps" RENAME "org.telegram.desktop-mute-symbolic.svg")
-    install(FILES "../lib/xdg/org.telegram.desktop.desktop" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/applications")
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/org.telegram.desktop.service" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/dbus-1/services")
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/org.telegram.desktop.metainfo.xml" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/metainfo")
 endif()

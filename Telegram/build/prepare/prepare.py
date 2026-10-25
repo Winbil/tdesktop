@@ -605,18 +605,7 @@ mac:
     rm rustup-init.sh
 """, 'ThirdParty')
 
-stage('lzma', """
-win:
-    git clone https://github.com/desktop-app/lzma.git
-    cd lzma\\C\\Util\\LzmaLib
-    SET "ToolsetProp="
-winarm:
-    SET "ToolsetProp=/property:PlatformToolset=v145"
-win:
-    msbuild -m LzmaLib.sln /property:Configuration=Debug /property:Platform="$X8664" %ToolsetProp%
-release:
-    msbuild -m LzmaLib.sln /property:Configuration=Release /property:Platform="$X8664" %ToolsetProp%
-""")
+
 
 stage('xz', """
 !win:
